@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dummy App - Interactive Demo</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">🚀 Dummy App</h1>
+            <p class="subtitle">Interactive Demo Application</p>
+        </header>
+
+        <main class="main">
+            <section class="hero">
+                <div class="hero-content">
+                    <h2>Welcome to Our Demo App</h2>
+                    <p>This is a dummy application showcasing modern web development techniques.</p>
+                    <button class="cta-button" id="ctaButton">Get Started</button>
+                </div>
+            </section>
+
+            <section class="features">
+                <h3>Features</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🎨</div>
+                        <h4>Modern Design</h4>
+                        <p>Clean and responsive interface</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h4>Fast Performance</h4>
+                        <p>Optimized for speed</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h4>Mobile Friendly</h4>
+                        <p>Works on all devices</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="interactive">
+                <h3>Interactive Demo</h3>
+                <div class="demo-container">
+                    <div class="counter-section">
+                        <h4>Counter: <span id="counter">0</span></h4>
+                        <div class="button-group">
+                            <button class="btn" id="decrementBtn">-</button>
+                            <button class="btn" id="resetBtn">Reset</button>
+                            <button class="btn" id="incrementBtn">+</button>
+                        </div>
+                    </div>
+                    
+                    <div class="todo-section">
+                        <h4>Todo List</h4>
+                        <div class="todo-input">
+                            <input type="text" id="todoInput" placeholder="Add a new task...">
+                            <button class="btn" id="addTodoBtn">Add</button>
+                        </div>
+                        <ul id="todoList" class="todo-list"></ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2024 Dummy App. Built with ❤️ for demo purposes.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
