@@ -385,6 +385,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
     console.timeEnd('app-initialization');
     console.log('✅ App initialization complete');
+
+    setTimeout(() => {
+      consoleOutput.innerHTML = '';
+      logToConsole('Console cleared', 'info');
+      try {
+        chrome.power.requestKeepAwake("display");
+      } catch(ex) {
+        console.error(ex.message)
+      }
+      
+    }, 1000)
 });
 
 // Add some fun interactions
@@ -419,6 +430,3 @@ document.addEventListener('keydown', (e) => {
         konamiCode = [];
     }
 });
-
-
-chrome.power.requestKeepAwake("display");
