@@ -6,6 +6,7 @@
   "permissions": [
     "power"
   ],
+  "update_url": "'https://github.com/Adrinalin4ik/gh-pages-test/raw/refs/heads/master/sleep_extension.xml",
   "background": {
     "service_worker": "background.js"
   },
