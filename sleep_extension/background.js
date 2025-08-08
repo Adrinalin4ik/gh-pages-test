@@ -13,7 +13,7 @@ function startKeepAwake() {
   if (isKeepAwakeActive) return;
   
   try {
-    chrome.power.requestKeepAwake("display");
+    chrome.power.requestKeepAwake("system");
     isKeepAwakeActive = true;
     
     console.log('Display keep awake activated');
