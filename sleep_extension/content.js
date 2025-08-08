@@ -46,8 +46,9 @@ function showSleepExtensionMessage() {
       message.parentElement.removeChild(message);
     }
     if (style.parentElement) {
-      style.parentElement.removeChild(style);git 
-  }, 10000);
+      style.parentElement.removeChild(style);
+    }
+  }, 120000);
 }
 
 // Listen for messages from background script
