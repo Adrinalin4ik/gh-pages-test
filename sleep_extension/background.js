@@ -13,24 +13,38 @@ function startKeepAwake() {
   if (isKeepAwakeActive) return;
   
   try {
-    chrome.power.requestKeepAwake("system");
+    // Check if chrome.power API is available
+    if (typeof chrome.power === 'undefined') {
+      console.error('chrome.power API is not available');
+      notifyContentScripts('powerApiUnavailable', 'chrome.power API is not available');
+      return;
+    }
+    
+    chrome.power.requestKeepAwake("display");
     isKeepAwakeActive = true;
     
     console.log('Display keep awake activated');
-    
-    // Notify all content scripts that keep awake is active
-    chrome.tabs.query({}, (tabs) => {
-      tabs.forEach(tab => {
-        chrome.tabs.sendMessage(tab.id, { action: 'keepAwakeEnabled' }).catch(() => {
-          // Tab might not be ready or content script not loaded
-        });
-      });
-    });
+    notifyContentScripts('keepAwakeEnabled');
     
   } catch (error) {
     console.error('Failed to activate keep awake:', error);
     isKeepAwakeActive = false;
+    notifyContentScripts('powerApiError', error.message || error.toString());
   }
+}
+
+// Notify content scripts with different message types
+function notifyContentScripts(action, errorMessage = '') {
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach(tab => {
+      chrome.tabs.sendMessage(tab.id, { 
+        action: action, 
+        errorMessage: errorMessage 
+      }).catch(() => {
+        // Tab might not be ready or content script not loaded
+      });
+    });
+  });
 }
 
 // Handle extension startup

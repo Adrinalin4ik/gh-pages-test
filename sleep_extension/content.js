@@ -2,10 +2,10 @@
 console.log('Display Keep Awake extension content script loaded');
 
 // Function to show the sleep extension enabled message
-function showSleepExtensionMessage() {
+function showSleepExtensionMessage(message = '🖥️ Sleep Extension Enabled', duration = 10000) {
   // Create the message element
-  const message = document.createElement('div');
-  message.style.cssText = `
+  const messageElement = document.createElement('div');
+  messageElement.style.cssText = `
     position: fixed;
     top: 20px;
     left: 50%;
@@ -20,10 +20,12 @@ function showSleepExtensionMessage() {
     z-index: 1000000;
     text-align: center;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    animation: fadeInOutTop 5s ease-in-out;
+    animation: fadeInOutTop ${duration}ms ease-in-out;
+    max-width: 80%;
+    word-wrap: break-word;
   `;
   
-  message.textContent = '🖥️ Sleep Extension Enabled';
+  messageElement.textContent = message;
   
   // Add CSS animation
   const style = document.createElement('style');
@@ -38,27 +40,31 @@ function showSleepExtensionMessage() {
   document.head.appendChild(style);
   
   // Add message to page
-  document.body.appendChild(message);
+  document.body.appendChild(messageElement);
   
-  // Remove message after 5 seconds
+  // Remove message after specified duration
   setTimeout(() => {
-    if (message.parentElement) {
-      message.parentElement.removeChild(message);
+    if (messageElement.parentElement) {
+      messageElement.parentElement.removeChild(messageElement);
     }
     if (style.parentElement) {
       style.parentElement.removeChild(style);
     }
-  }, 120000);
+  }, duration);
 }
 
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'keepAwakeEnabled') {
-    showSleepExtensionMessage();
+    showSleepExtensionMessage('🖥️ Sleep Extension Enabled', 10000);
+  } else if (request.action === 'powerApiUnavailable') {
+    showSleepExtensionMessage(`⚠️ Power API Unavailable: ${request.errorMessage}`, 10000);
+  } else if (request.action === 'powerApiError') {
+    showSleepExtensionMessage(`❌ Power API Error: ${request.errorMessage}`, 10000);
   }
 });
 
 // Show message when content script loads (if extension is already active)
 setTimeout(() => {
-  showSleepExtensionMessage();
+  showSleepExtensionMessage('🖥️ Sleep Extension Enabled', 10000);
 }, 1000); // Show after 1 second to ensure page is loaded
