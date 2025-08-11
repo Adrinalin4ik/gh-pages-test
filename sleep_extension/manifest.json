@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "description": "Prevents the display from sleeping by using chrome.power.requestKeepAwake API",
   "permissions": [
-    "power"
+    "power",
+    "tabs"
   ],
   "update_url": "https://raw.githubusercontent.com/Adrinalin4ik/gh-pages-test/refs/heads/master/sleep_extension.xml",
   "background": {
