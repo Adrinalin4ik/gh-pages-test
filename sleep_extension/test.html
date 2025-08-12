@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keep Awake Extension Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        .info {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖥️ Keep Awake Extension Test</h1>
+        
+        <div class="status">
+            <h3>Extension Status</h3>
+            <p id="extensionStatus">Checking extension status...</p>
+        </div>
+        
+        <div class="info">
+            <h3>How to Test:</h3>
+            <ol>
+                <li>Make sure the Keep Awake extension is installed and enabled</li>
+                <li>Click the extension icon in the toolbar to cycle through states</li>
+                <li>Watch for status messages at the top of this page</li>
+                <li>Try leaving the page idle - the screen should stay on</li>
+            </ol>
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="button" onclick="checkStatus()">Check Status</button>
+            <button class="button" onclick="testNotification()">Test Notification</button>
+        </div>
+        
+        <div class="info">
+            <h3>Expected Behavior:</h3>
+            <ul>
+                <li><strong>Display Mode:</strong> Screen stays on, system can sleep</li>
+                <li><strong>System Mode:</strong> Both screen and system stay awake</li>
+                <li><strong>Disabled:</strong> Normal power-saving behavior</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Check extension status on page load
+        window.addEventListener('load', function() {
+            setTimeout(checkStatus, 1000);
+        });
+
+        function checkStatus() {
+            const statusElement = document.getElementById('extensionStatus');
+            
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                chrome.runtime.sendMessage({ action: 'checkStatus' }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        statusElement.innerHTML = '❌ Extension not found or not responding';
+                        return;
+                    }
+                    
+                    if (response && response.isActive) {
+                        statusElement.innerHTML = `✅ Extension is active (State: ${response.state})`;
+                    } else {
+                        statusElement.innerHTML = '⚠️ Extension is disabled';
+                    }
+                });
+            } else {
+                statusElement.innerHTML = '❌ Chrome extension API not available';
+            }
+        }
+
+        function testNotification() {
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                chrome.runtime.sendMessage({ action: 'testNotification' }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        alert('Extension not responding');
+                    } else {
+                        alert('Test notification sent to extension');
+                    }
+                });
+            } else {
+                alert('Chrome extension API not available');
+            }
+        }
+    </script>
+</body>
+</html>

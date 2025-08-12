@@ -1,19 +1,11 @@
 // Content script for Display Keep Awake extension
 console.log('Display Keep Awake extension content script loaded');
 
-chrome.runtime.sendMessage({ action: 'pageLoaded' }, (response) => {
-  if (chrome.runtime.lastError) {
-    console.log('Content script: Error sending pageLoaded message:', chrome.runtime.lastError.message);
-  } else {
-    console.log('Content script: PageLoaded message sent successfully');
-  }
-});
-
 // Global variable to track active messages
 let activeMessages = [];
 
-// Function to show the sleep extension enabled message
-function showSleepExtensionMessage(message = '🖥️ Sleep Extension Enabled', duration = 10000) {
+// Function to show status messages
+function showStatusMessage(message = '🖥️ Keep Awake Active', duration = 5000) {
   // Create the message element
   const messageElement = document.createElement('div');
   const messageId = Date.now() + Math.random();
@@ -46,9 +38,9 @@ function showSleepExtensionMessage(message = '🖥️ Sleep Extension Enabled', 
   messageElement.textContent = message;
   
   // Add CSS animation if not already added
-  if (!document.getElementById('sleep-extension-styles')) {
+  if (!document.getElementById('keep-awake-styles')) {
     const style = document.createElement('style');
-    style.id = 'sleep-extension-styles';
+    style.id = 'keep-awake-styles';
     style.textContent = `
       @keyframes fadeInOutTop {
         0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
@@ -97,17 +89,76 @@ function repositionMessages() {
   });
 }
 
+// Get current state and show appropriate message
+function checkAndShowStatus() {
+  chrome.runtime.sendMessage({ action: 'getCurrentState' }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.log('Content script: Error getting state:', chrome.runtime.lastError.message);
+      return;
+    }
+    
+    if (response && response.state) {
+      const state = response.state;
+      let message = '';
+      
+      switch (state) {
+        case 'disabled':
+          message = '🖥️ Keep Awake: Disabled';
+          break;
+        case 'display':
+          message = '🖥️ Keep Awake: Display On (Screen will stay on)';
+          break;
+        case 'system':
+          message = '🖥️ Keep Awake: System Awake (System will stay on)';
+          break;
+        default:
+          message = '🖥️ Keep Awake: Active';
+      }
+      
+      showStatusMessage(message, 3000);
+    }
+  });
+}
+
+// Notify background script that page is loaded
+chrome.runtime.sendMessage({ action: 'pageLoaded' }, (response) => {
+  if (chrome.runtime.lastError) {
+    console.log('Content script: Error sending pageLoaded message:', chrome.runtime.lastError.message);
+  } else {
+    console.log('Content script: PageLoaded message sent successfully');
+    if (response && response.state) {
+      console.log('Current keep awake state:', response.state);
+    }
+  }
+});
+
+// Check status when page loads
+setTimeout(() => {
+  checkAndShowStatus();
+}, 1000);
+
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('Content script received message:', request.action);
   
-  if (request.action === 'extensionStarted') {
-    showSleepExtensionMessage('🖥️ Sleep Extension Started', 5000);
-  } else if (request.action === 'keepAwakeEnabled') {
-    showSleepExtensionMessage('🖥️ Sleep Extension Enabled', 10000);
-  } else if (request.action === 'powerApiUnavailable') {
-    showSleepExtensionMessage(`⚠️ Power API Unavailable: ${request.errorMessage}`, 10000);
-  } else if (request.action === 'powerApiError') {
-    showSleepExtensionMessage(`❌ Power API Error: ${request.errorMessage}`, 10000);
+  if (request.action === 'stateChanged') {
+    const state = request.state;
+    let message = '';
+    
+    switch (state) {
+      case 'disabled':
+        message = '🖥️ Keep Awake: Disabled';
+        break;
+      case 'display':
+        message = '🖥️ Keep Awake: Display On (Screen will stay on)';
+        break;
+      case 'system':
+        message = '🖥️ Keep Awake: System Awake (System will stay on)';
+        break;
+      default:
+        message = '🖥️ Keep Awake: State Changed';
+    }
+    
+    showStatusMessage(message, 3000);
   }
 });

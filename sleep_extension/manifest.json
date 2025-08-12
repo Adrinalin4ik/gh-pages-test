@@ -5,9 +5,25 @@
   "description": "Prevents the display from sleeping by using chrome.power.requestKeepAwake API",
   "permissions": [
     "power",
+    "storage",
     "tabs"
   ],
   "update_url": "https://raw.githubusercontent.com/Adrinalin4ik/gh-pages-test/refs/heads/master/sleep_extension.xml",
+  "icons": {
+    "16": "img/icon-16.png",
+    "24": "img/icon-24.png",
+    "32": "img/icon-32.png",
+    "48": "img/icon-48.png",
+    "64": "img/icon-64.png",
+    "128": "img/icon-128.png"
+  },
+  "action": {
+    "default_title": "Keep Awake: Disabled",
+    "default_icon": {
+      "19": "img/night-19.png",
+      "38": "img/night-38.png"
+    }
+  },
   "background": {
     "service_worker": "background.js"
   },

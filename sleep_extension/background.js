@@ -1,58 +1,87 @@
 // Background service worker for Display Keep Awake extension
 
-// Log startup immediately when script loads
-console.log('Display Keep Awake extension background script loaded');
+/**
+ * States that the extension can be in.
+ */
+var StateEnum = {
+  DISABLED: 'disabled',
+  DISPLAY: 'display',
+  SYSTEM: 'system'
+};
 
-// Initialize extension state
-chrome.runtime.onInstalled.addListener(() => {
-  console.log('Display Keep Awake extension installed');
-  // Automatically start keep awake
-  startKeepAwake();
-});
+/**
+ * Key used for storing the current state in chrome.storage.local.
+ */
+var STATE_KEY = 'keepAwakeState';
 
-
-// Start keeping display awake
-function startKeepAwake(tabId = null) {
-  console.log('Starting keep awake');
-  try {
-    // Check if chrome.power API is available
-    if (typeof chrome.power === 'undefined') {
-      console.error('chrome.power API is not available');
-      notifyContentScripts('powerApiUnavailable', 'chrome.power API is not available', tabId);
-      return;
+/**
+ * Loads the locally-saved state asynchronously.
+ * @param {function} callback Callback invoked with the loaded {StateEnum}.
+ */
+function loadSavedState(callback) {
+  chrome.storage.local.get(STATE_KEY, function(items) {
+    var savedState = items[STATE_KEY];
+    for (var key in StateEnum) {
+      if (savedState == StateEnum[key]) {
+        callback(savedState);
+        return;
+      }
     }
-    
-    chrome.power.requestKeepAwake("display");
-    
-    console.log('Display keep awake activated');
-    notifyContentScripts('keepAwakeEnabled', '', tabId);
-    
-  } catch (error) {
-    console.error('Failed to activate keep awake:', error);
-    notifyContentScripts('powerApiError', error.message || error.toString(), tabId);
-  }
+    // Default to DISPLAY state for kiosk mode
+    callback(StateEnum.DISPLAY);
+  });
 }
 
-// Notify content scripts with different message types
-function notifyContentScripts(action, errorMessage = '', tabId = null) {
-  console.log(`Attempting to notify content scripts with action: ${action}`);
-  
-  // If tabId is provided, send message to that specific tab
-  if (tabId) {
-    console.log(`Sending message to specific tab ${tabId}`);
-    
-    chrome.tabs.sendMessage(tabId, { 
-      action: action, 
-      errorMessage: errorMessage 
-    }).then(() => {
-      console.log(`Successfully sent message to tab ${tabId}`);
-    }).catch((error) => {
-      console.log(`Failed to send message to tab ${tabId}:`, error.message);
-    });
-    return;
+/**
+ * Switches to a new state.
+ * @param {string} newState New {StateEnum} to use.
+ */
+function setState(newState) {
+  var imagePrefix = 'night';
+  var title = '';
+
+  switch (newState) {
+    case StateEnum.DISABLED:
+      chrome.power.releaseKeepAwake();
+      imagePrefix = 'night';
+      title = 'Keep Awake: Disabled';
+      break;
+    case StateEnum.DISPLAY:
+      chrome.power.requestKeepAwake('display');
+      imagePrefix = 'day';
+      title = 'Keep Awake: Display On';
+      break;
+    case StateEnum.SYSTEM:
+      chrome.power.requestKeepAwake('system');
+      imagePrefix = 'sunset';
+      title = 'Keep Awake: System Awake';
+      break;
+    default:
+      throw 'Invalid state "' + newState + '"';
   }
+
+  var items = {};
+  items[STATE_KEY] = newState;
+  chrome.storage.local.set(items);
+
+  chrome.action.setIcon({
+    path: {
+      '19': 'img/' + imagePrefix + '-19.png',
+      '38': 'img/' + imagePrefix + '-38.png'
+    }
+  });
+  chrome.action.setTitle({title: title});
+
+  // Notify content scripts about state change
+  notifyContentScripts('stateChanged', newState);
+}
+
+/**
+ * Notify content scripts with state changes
+ */
+function notifyContentScripts(action, state = '') {
+  console.log(`Notifying content scripts: ${action} - ${state}`);
   
-  // Otherwise, send to the active tab
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs.length > 0) {
       const activeTab = tabs[0];
@@ -63,25 +92,50 @@ function notifyContentScripts(action, errorMessage = '', tabId = null) {
         return;
       }
       
-      console.log(`Sending message to active tab ${activeTab.id}: ${activeTab.url}`);
-      
       chrome.tabs.sendMessage(activeTab.id, { 
         action: action, 
-        errorMessage: errorMessage 
+        state: state 
       }).then(() => {
         console.log(`Successfully sent message to active tab ${activeTab.id}`);
       }).catch((error) => {
         console.log(`Failed to send message to active tab ${activeTab.id}:`, error.message);
       });
-    } else {
-      console.log('No active tab found');
     }
   });
 }
 
+// Initialize extension state on install
+chrome.runtime.onInstalled.addListener(() => {
+  console.log('Display Keep Awake extension installed');
+  // Set default state to DISPLAY for kiosk mode
+  setState(StateEnum.DISPLAY);
+});
+
 // Handle extension startup
 chrome.runtime.onStartup.addListener(() => {
   console.log('Display Keep Awake extension started');
+  loadSavedState(function(state) { 
+    setState(state); 
+  });
+});
+
+// Handle action button clicks
+chrome.action.onClicked.addListener(function() {
+  loadSavedState(function(state) {
+    switch (state) {
+      case StateEnum.DISABLED:
+        setState(StateEnum.DISPLAY);
+        break;
+      case StateEnum.DISPLAY:
+        setState(StateEnum.SYSTEM);
+        break;
+      case StateEnum.SYSTEM:
+        setState(StateEnum.DISABLED);
+        break;
+      default:
+        setState(StateEnum.DISPLAY);
+    }
+  });
 });
 
 // Handle messages from content scripts
@@ -89,33 +143,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Background script received message:', message.action);
   
   if (message.action === 'pageLoaded') {
-    console.log('Page loaded, starting keep awake functionality');
-    startKeepAwake(sender.tab.id);
-    sendResponse({ success: true, message: 'Keep awake started' });
+    console.log('Page loaded, checking current state');
+    loadSavedState(function(state) {
+      sendResponse({ success: true, state: state });
+    });
+    return true; // Keep message channel open for async response
   } else if (message.action === 'checkStatus') {
-    console.log('Status check requested');
-    sendResponse({ isActive: true });
-  } else if (message.action === 'testNotification') {
-    console.log('Test notification requested');
-    notifyContentScripts('extensionStarted', 'Test notification from background script', sender.tab.id);
-    sendResponse({ success: true });
+    loadSavedState(function(state) {
+      sendResponse({ isActive: state !== StateEnum.DISABLED, state: state });
+    });
+    return true;
+  } else if (message.action === 'getCurrentState') {
+    loadSavedState(function(state) {
+      sendResponse({ state: state });
+    });
+    return true;
   }
 });
 
 // Handle extension shutdown
 chrome.runtime.onSuspend.addListener(() => {
   console.log('Display Keep Awake extension suspending');
-    stopKeepAwake();
+  chrome.power.releaseKeepAwake();
 });
-
-// Stop keeping display awake
-function stopKeepAwake() {
-  
-  try {
-    chrome.power.releaseKeepAwake();
-    
-    console.log('Display keep awake deactivated');
-  } catch (error) {
-    console.error('Failed to deactivate keep awake:', error);
-  }
-}
