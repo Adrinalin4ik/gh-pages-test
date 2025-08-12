@@ -29,7 +29,7 @@ function loadSavedState(callback) {
         return;
       }
     }
-    callback(StateEnum.DISABLED);
+    callback(StateEnum.DISPLAY);
   });
 }
 
