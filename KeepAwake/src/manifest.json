@@ -20,7 +20,7 @@
     "64": "img/icon-64.png",
     "128": "img/icon-128.png"
   },
-  "update_url": "https://raw.githubusercontent.com/Adrinalin4ik/gh-pages-test/refs/heads/master/sleep_extension.xml",
+  "update_url": "https://raw.githubusercontent.com/Adrinalin4ik/gh-pages-test/refs/heads/master/KeepAwake/src/keep_awake.xml",
   "action": {
     "default_title": "__MSG_disabledTitle__",
     "default_icon": {
